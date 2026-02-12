@@ -24,7 +24,7 @@ Visual image processing pipeline editor that runs entirely in the browser. Build
 - WebGPU + WGSL shaders
 - Pinia (state management)
 
-## Getting Started
+## Running locally
 
 ```bash
 yarn install
