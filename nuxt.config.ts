@@ -18,6 +18,7 @@ export default defineNuxtConfig({
   ],
 
   app: {
+    baseURL: process.env.NUXT_APP_BASE_URL || '/',
     head: {
       title: 'PipeMagic',
       meta: [
@@ -26,6 +27,9 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+      ],
+      script: [
+        { src: '/coi-serviceworker.min.js' },
       ],
     },
     spaLoadingTemplate: true,
