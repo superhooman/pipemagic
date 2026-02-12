@@ -188,14 +188,14 @@ export const usePipelineStore = defineStore('pipeline', () => {
         type: 'normalize',
         position: { x: 660, y: 200 },
         label: 'Normalize',
-        data: { params: { size: 1024, padding: 16 } },
+        data: { params: { size: 1024, padding: 160 } },
       },
       {
         id: outlineId,
         type: 'outline',
         position: { x: 960, y: 200 },
         label: 'Outline',
-        data: { params: { thickness: 22, color: '#ffffff', opacity: 1, quality: 'high', position: 'outside', threshold: 2.5 } },
+        data: { params: { thickness: 50, color: '#ffffff', opacity: 1, quality: 'high', position: 'outside', threshold: 5 } },
       },
       {
         id: outputId,

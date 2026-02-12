@@ -289,7 +289,7 @@ const statusClass = computed(() => {
               type="range"
               :value="params.thickness"
               min="1"
-              max="32"
+              max="128"
               step="1"
               class="w-full mt-1"
               @input="updateParam('thickness', +($event.target as HTMLInputElement).value)"

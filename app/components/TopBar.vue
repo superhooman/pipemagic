@@ -22,9 +22,25 @@ const store = usePipelineStore();
 const { savePipeline, savePipelineAs, openPipeline, newPipeline } = useFileIo();
 const { run: runPipeline, stop, runError } = usePipelineRunner();
 
-const highlightRun = computed(
-  () => store.inputImages.size > 0 && !store.hasRun && !store.isRunning,
-);
+const highlightRun = computed(() => {
+  if (store.isRunning || store.inputImages.size === 0) return false;
+  return store.nodes.some(n => {
+    const state = store.nodeStates.get(n.id);
+    return !state || (state.status !== 'done' && state.status !== 'cached');
+  });
+});
+
+// Auto-run pipeline when an image is uploaded
+watch(() => store.inputImages, () => {
+  if (store.inputImages.size > 0) {
+    if (store.isRunning) {
+      stop();
+      setTimeout(() => run(), 50);
+    } else {
+      run();
+    }
+  }
+});
 
 async function run() {
   try {
@@ -69,7 +85,7 @@ function buildOutlinePreset(): PipelineDefinition {
         id: normalizeId,
         type: "normalize",
         position: { x: 660, y: 200 },
-        params: { ...DEFAULT_PARAMS["normalize"] },
+        params: { ...DEFAULT_PARAMS["normalize"], padding: 160 },
         label: "Normalize",
       },
       {
@@ -77,12 +93,12 @@ function buildOutlinePreset(): PipelineDefinition {
         type: "outline",
         position: { x: 960, y: 200 },
         params: {
-          thickness: 22,
+          thickness: 50,
           color: "#ffffff",
           opacity: 1,
           quality: "high",
           position: "outside",
-          threshold: 2.5,
+          threshold: 5,
         },
         label: "Outline",
       },
@@ -191,11 +207,6 @@ const addNodeItems = computed<MenuItem[]>(() => [
     label: "Outline",
     icon: PaintBrushIcon,
     action: () => addNodeAtCenter("outline"),
-  },
-  {
-    label: "Upscale 2x",
-    icon: ArrowsPointingOutIcon,
-    action: () => addNodeAtCenter("upscale"),
   },
 ]);
 
