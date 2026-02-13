@@ -39,6 +39,9 @@ export default defineNuxtConfig({
     plugins: [
       tailwindcss(),
     ],
+    optimizeDeps: {
+      include: ['@websr/websr'],
+    },
     worker: {
       format: 'es',
     },

@@ -15,9 +15,8 @@ export interface RemoveBgParams {
 }
 
 export interface UpscaleParams {
-  scale: 2
-  tileSize: number
-  device: 'webgpu' | 'wasm' | 'auto'
+  model: 'cnn-2x-s' | 'cnn-2x-m' | 'cnn-2x-l'
+  contentType: 'rl' | 'an' | '3d'
 }
 
 export interface NormalizeParams {
@@ -48,6 +47,6 @@ export const DEFAULT_PARAMS: NodeParamsMap = {
   'output': { format: 'png', quality: 0.92 },
   'remove-bg': { threshold: 0.5, device: 'auto', dtype: 'fp16' },
   'normalize': { size: 1024, padding: 16 },
-  'upscale': { scale: 2, tileSize: 512, device: 'auto' },
+  'upscale': { model: 'cnn-2x-s', contentType: 'rl' },
   'outline': { thickness: 4, color: '#ffffff', opacity: 1, quality: 'medium', position: 'outside', threshold: 0 },
 }

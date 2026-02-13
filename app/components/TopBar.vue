@@ -208,6 +208,11 @@ const addNodeItems = computed<MenuItem[]>(() => [
     icon: PaintBrushIcon,
     action: () => addNodeAtCenter("outline"),
   },
+  {
+    label: "Upscale 2x",
+    icon: ArrowsPointingOutIcon,
+    action: () => addNodeAtCenter("upscale"),
+  },
 ]);
 
 function handleKeyboard(e: KeyboardEvent) {

@@ -1,58 +1,67 @@
 import type { ExecutionContext } from '~~/shared/types/execution'
 import type { ImageFrame } from '~~/shared/types/image-frame'
-import { bitmapToImageData, imageDataToBitmap } from '~/utils/image'
 
-let upscaler: any = null
-let loadingPromise: Promise<any> | null = null
+type ModelSize = 'cnn-2x-s' | 'cnn-2x-m' | 'cnn-2x-l'
+type ContentType = 'rl' | 'an' | '3d'
 
-async function getUpscaler(device: string, onStatus?: (msg: string) => void) {
-  if (upscaler) return upscaler
-  if (loadingPromise) return loadingPromise
+// Static imports so Vite handles resolution — no fetch needed
+const WEIGHTS: Record<string, () => Promise<any>> = {
+  'cnn-2x-s-rl': () => import('@websr/websr/weights/anime4k/cnn-2x-s-rl.json'),
+  'cnn-2x-s-an': () => import('@websr/websr/weights/anime4k/cnn-2x-s-an.json'),
+  'cnn-2x-s-3d': () => import('@websr/websr/weights/anime4k/cnn-2x-s-3d.json'),
+  'cnn-2x-m-rl': () => import('@websr/websr/weights/anime4k/cnn-2x-m-rl.json'),
+  'cnn-2x-m-an': () => import('@websr/websr/weights/anime4k/cnn-2x-m-an.json'),
+  'cnn-2x-m-3d': () => import('@websr/websr/weights/anime4k/cnn-2x-m-3d.json'),
+  'cnn-2x-l-rl': () => import('@websr/websr/weights/anime4k/cnn-2x-l-rl.json'),
+  'cnn-2x-l-an': () => import('@websr/websr/weights/anime4k/cnn-2x-l-an.json'),
+  'cnn-2x-l-3d': () => import('@websr/websr/weights/anime4k/cnn-2x-l-3d.json'),
+}
 
-  loadingPromise = (async () => {
-    onStatus?.('Loading transformers.js...')
-    const { env, pipeline } = await import('@huggingface/transformers')
-    env.allowLocalModels = false
+let websr: any = null
+let currentKey: string | null = null
+let gpuDevice: GPUDevice | null = null
 
-    let actualDevice = device
-    if (actualDevice === 'auto') {
-      try {
-        if (navigator.gpu) {
-          const adapter = await navigator.gpu.requestAdapter()
-          actualDevice = adapter ? 'webgpu' : 'wasm'
-        } else {
-          actualDevice = 'wasm'
-        }
-      } catch {
-        actualDevice = 'wasm'
-      }
-    }
+async function getWebSR(
+  model: ModelSize,
+  contentType: ContentType,
+  onStatus?: (msg: string) => void,
+) {
+  const key = `${model}-${contentType}`
 
-    onStatus?.(`Loading Swin2SR on ${actualDevice}...`)
-    try {
-      upscaler = await pipeline('image-to-image', 'Xenova/swin2SR-classical-sr-x2-64', {
-        device: actualDevice as 'webgpu' | 'wasm',
-      })
-    } catch (e) {
-      if (actualDevice === 'webgpu') {
-        onStatus?.('WebGPU failed, falling back to WASM...')
-        upscaler = await pipeline('image-to-image', 'Xenova/swin2SR-classical-sr-x2-64', {
-          device: 'wasm',
-        })
-      } else {
-        throw e
-      }
-    }
-    return upscaler
-  })()
+  const WebSR = (await import('@websr/websr')).default
 
-  try {
-    const result = await loadingPromise
-    return result
-  } catch (e) {
-    loadingPromise = null
-    throw e
+  if (!gpuDevice) {
+    onStatus?.('Initializing WebGPU...')
+    const device = await WebSR.initWebGPU()
+    if (!device) throw new Error('WebGPU is required for upscaling')
+    gpuDevice = device
   }
+
+  const weightsModule = await WEIGHTS[key]()
+  const weights = weightsModule.default
+
+  if (websr && currentKey !== key) {
+    onStatus?.('Switching model...')
+    websr.switchNetwork(`anime4k/${model}`, weights)
+    currentKey = key
+    return websr
+  }
+
+  if (websr && currentKey === key) {
+    return websr
+  }
+
+  onStatus?.(`Loading ${model} (${contentType})...`)
+
+  const canvas = new OffscreenCanvas(1, 1) as unknown as HTMLCanvasElement
+  websr = new WebSR({
+    network_name: `anime4k/${model}`,
+    weights,
+    gpu: gpuDevice,
+    canvas,
+  })
+  currentKey = key
+  return websr
 }
 
 export async function executeUpscale(
@@ -63,49 +72,78 @@ export async function executeUpscale(
   const input = inputs[0]
   if (!input) throw new Error('No input image')
 
-  const device = (params.device as string) || 'auto'
+  const model = (params.model as ModelSize) || 'cnn-2x-s'
+  const contentType = (params.contentType as ContentType) || 'rl'
 
   ctx.onProgress('', 0.05)
-  const model = await getUpscaler(device, (msg) => console.log('[upscale]', msg))
-  ctx.onProgress('', 0.2)
+  ctx.onStatusMessage?.('', 'Loading upscale model...')
 
-  if (ctx.abortSignal.aborted) throw new DOMException('Aborted', 'AbortError')
-
-  const imageData = bitmapToImageData(input.bitmap)
-  const { RawImage } = await import('@huggingface/transformers')
-  const rawImage = new RawImage(new Uint8ClampedArray(imageData.data), input.width, input.height, 4)
+  const sr = await getWebSR(model, contentType, (msg) => ctx.onStatusMessage?.('', msg))
 
   ctx.onProgress('', 0.3)
+  if (ctx.abortSignal.aborted) throw new DOMException('Aborted', 'AbortError')
 
-  const result = await model(rawImage) as any
+  const { width, height } = input
+  const outW = width * 2
+  const outH = height * 2
+
+  // Extract alpha channel from source
+  ctx.onStatusMessage?.('', 'Upscaling...')
+  const srcCanvas = new OffscreenCanvas(width, height)
+  const srcCtx = srcCanvas.getContext('2d')!
+  srcCtx.drawImage(input.bitmap, 0, 0)
+  const srcData = srcCtx.getImageData(0, 0, width, height).data
+
+  // Upscale RGB with WebSR
+  await sr.render(input.bitmap)
+  ctx.onProgress('', 0.7)
+
+  // Read upscaled RGB from WebSR canvas via bitmap
+  const srCanvas = sr.canvas as unknown as OffscreenCanvas
+  const srBitmap = await createImageBitmap(srCanvas)
+  const rgbCanvas = new OffscreenCanvas(outW, outH)
+  const rgbCtx = rgbCanvas.getContext('2d')!
+  rgbCtx.drawImage(srBitmap, 0, 0)
+  const srImageData = rgbCtx.getImageData(0, 0, outW, outH)
+  const srData = srImageData.data
+
+  // Upscale alpha with bilinear interpolation via canvas
+  const alphaCanvas = new OffscreenCanvas(width, height)
+  const alphaCtx = alphaCanvas.getContext('2d')!
+  const alphaImageData = alphaCtx.createImageData(width, height)
+  for (let i = 0; i < width * height; i++) {
+    const a = srcData[i * 4 + 3]
+    alphaImageData.data[i * 4] = a
+    alphaImageData.data[i * 4 + 1] = a
+    alphaImageData.data[i * 4 + 2] = a
+    alphaImageData.data[i * 4 + 3] = 255
+  }
+  alphaCtx.putImageData(alphaImageData, 0, 0)
+
+  const alphaUpCanvas = new OffscreenCanvas(outW, outH)
+  const alphaUpCtx = alphaUpCanvas.getContext('2d')!
+  alphaUpCtx.imageSmoothingEnabled = true
+  alphaUpCtx.imageSmoothingQuality = 'high'
+  alphaUpCtx.drawImage(alphaCanvas, 0, 0, outW, outH)
+  const alphaUpData = alphaUpCtx.getImageData(0, 0, outW, outH).data
 
   ctx.onProgress('', 0.9)
 
-  const outWidth = result.width
-  const outHeight = result.height
-  const outData = result.data as Uint8Array
-
-  let outImageData: ImageData
-  if (result.channels === 3) {
-    const rgba = new Uint8ClampedArray(outWidth * outHeight * 4)
-    for (let i = 0; i < outWidth * outHeight; i++) {
-      rgba[i * 4] = outData[i * 3]
-      rgba[i * 4 + 1] = outData[i * 3 + 1]
-      rgba[i * 4 + 2] = outData[i * 3 + 2]
-      rgba[i * 4 + 3] = 255
-    }
-    outImageData = new ImageData(rgba, outWidth, outHeight)
-  } else {
-    outImageData = new ImageData(new Uint8ClampedArray(outData), outWidth, outHeight)
+  // Composite: upscaled RGB + upscaled alpha
+  for (let i = 0; i < outW * outH; i++) {
+    srData[i * 4 + 3] = alphaUpData[i * 4] // R channel holds the alpha
   }
+  rgbCtx.putImageData(srImageData, 0, 0)
+
+  const outBitmap = await createImageBitmap(rgbCanvas)
 
   ctx.onProgress('', 1)
+  ctx.onStatusMessage?.('', null)
 
-  const bitmap = await imageDataToBitmap(outImageData)
   return {
-    bitmap,
-    width: bitmap.width,
-    height: bitmap.height,
+    bitmap: outBitmap,
+    width: outBitmap.width,
+    height: outBitmap.height,
     revision: Date.now(),
   }
 }
