@@ -2,7 +2,7 @@
 import { ArrowDownTrayIcon } from '@heroicons/vue/20/solid'
 import BaseNode from '~/components/nodes/BaseNode.vue'
 import { usePipelineStore } from '~/stores/pipeline'
-import { bitmapToBlob } from '~/utils/image'
+import { bitmapToBlob } from 'pipemagic'
 
 const props = defineProps<{ id: string; label?: string; data: { params: Record<string, unknown> } }>()
 

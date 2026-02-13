@@ -1,6 +1,6 @@
-import type { ExecutionContext } from '~~/shared/types/execution'
-import type { ImageFrame } from '~~/shared/types/image-frame'
-import { getUpscaler } from '~/utils/websr'
+import type { ExecutionContext } from '../types/execution'
+import type { ImageFrame } from '../types/image-frame'
+import { getUpscaler } from '../websr'
 
 type ModelSize = 'cnn-2x-s' | 'cnn-2x-m' | 'cnn-2x-l'
 type ContentType = 'rl' | 'an' | '3d'

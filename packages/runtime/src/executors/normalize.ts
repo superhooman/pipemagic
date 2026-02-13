@@ -1,6 +1,6 @@
-import type { ExecutionContext } from '~~/shared/types/execution'
-import type { ImageFrame } from '~~/shared/types/image-frame'
-import { bitmapToImageData } from '~/utils/image'
+import type { ExecutionContext } from '../types/execution'
+import type { ImageFrame } from '../types/image-frame'
+import { bitmapToImageData } from '../utils/image'
 
 export async function executeNormalize(
   ctx: ExecutionContext,
@@ -39,7 +39,7 @@ export async function executeNormalize(
 
   ctx.onProgress('', 0.4)
 
-  // Handle fully transparent image — return empty canvas at target size
+  // Handle fully transparent image -- return empty canvas at target size
   if (maxX < 0 || maxY < 0) {
     const canvas = new OffscreenCanvas(size, size)
     const bitmap = await createImageBitmap(canvas)
@@ -58,7 +58,7 @@ export async function executeNormalize(
 
   ctx.onProgress('', 0.6)
 
-  // 5. Create a size×size canvas, draw cropped content centered and scaled
+  // 5. Create a size x size canvas, draw cropped content centered and scaled
   // First, crop the source into a temp canvas
   const cropCanvas = new OffscreenCanvas(cropW, cropH)
   const cropCtx = cropCanvas.getContext('2d')!

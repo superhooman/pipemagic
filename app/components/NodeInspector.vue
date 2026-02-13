@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { usePipelineStore } from '~/stores/pipeline'
-import { bitmapToBlob } from '~/utils/image'
+import { bitmapToBlob } from 'pipemagic'
 import type { NodeType } from '~~/shared/types/pipeline'
 
 const store = usePipelineStore()

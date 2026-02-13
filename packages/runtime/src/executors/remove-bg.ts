@@ -1,6 +1,6 @@
-import type { ExecutionContext } from '~~/shared/types/execution'
-import type { ImageFrame } from '~~/shared/types/image-frame'
-import { bitmapToImageData, imageDataToBitmap } from '~/utils/image'
+import type { ExecutionContext } from '../types/execution'
+import type { ImageFrame } from '../types/image-frame'
+import { bitmapToImageData, imageDataToBitmap } from '../utils/image'
 
 let segmenter: any = null
 let loadingPromise: Promise<any> | null = null
@@ -52,7 +52,7 @@ async function getSegmenter(device: string, dtype: string, onStatus?: (msg: stri
     try {
       segmenter = await pipeline('image-segmentation', 'briaai/RMBG-1.4', {
         device: actualDevice as 'webgpu' | 'wasm',
-        dtype,
+        dtype: dtype as any,
         progress_callback,
       })
     } catch (e) {
@@ -60,7 +60,7 @@ async function getSegmenter(device: string, dtype: string, onStatus?: (msg: stri
         onStatus?.('WebGPU failed, falling back to WASM...')
         segmenter = await pipeline('image-segmentation', 'briaai/RMBG-1.4', {
           device: 'wasm',
-          dtype,
+          dtype: dtype as any,
           progress_callback,
         })
       } else {
@@ -130,7 +130,7 @@ export async function executeRemoveBg(
       output[i * 4] = src[i * 4]
       output[i * 4 + 1] = src[i * 4 + 1]
       output[i * 4 + 2] = src[i * 4 + 2]
-      // Read mask value — could be 1-channel or 4-channel
+      // Read mask value -- could be 1-channel or 4-channel
       const maskVal = maskChannels >= 4 ? maskPixels[i * maskChannels] : maskPixels[i]
       output[i * 4 + 3] = maskVal ?? 255
     }

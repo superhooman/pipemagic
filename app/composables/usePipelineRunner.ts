@@ -1,22 +1,26 @@
 import { usePipelineStore } from '~/stores/pipeline'
-import { useGpu } from '~/composables/useGpu'
-import { useImageFrame } from '~/composables/useImageFrame'
-import { topoSort, getUpstreamNodes, validatePipeline } from '~/utils/graph'
-import { computeCacheKey } from '~/utils/hash'
-import { resizeBitmap } from '~/utils/image'
-import type { NodeType, NodeDef, EdgeDef } from '~~/shared/types/pipeline'
-import type { ImageFrame } from '~~/shared/types/image-frame'
-import type { ExecutionContext, NodeStatus } from '~~/shared/types/execution'
-import { executeRemoveBg } from '~/composables/executors/executeRemoveBg'
-import { executeUpscale } from '~/composables/executors/executeUpscale'
-import { executeNormalize } from '~/composables/executors/executeNormalize'
-import { executeOutline } from '~/composables/executors/executeOutline'
-
-export type NodeExecutor = (
-  ctx: ExecutionContext,
-  inputs: ImageFrame[],
-  params: Record<string, unknown>,
-) => Promise<ImageFrame>
+import {
+  initGpu,
+  getGpuDevice,
+  createFrame,
+  topoSort,
+  getUpstreamNodes,
+  validatePipeline,
+  computeCacheKey,
+  resizeBitmap,
+  executeRemoveBg,
+  executeUpscale,
+  executeNormalize,
+  executeOutline,
+} from 'pipemagic'
+import type {
+  NodeType,
+  NodeDef,
+  EdgeDef,
+  ImageFrame,
+  ExecutionContext,
+  NodeExecutor,
+} from 'pipemagic'
 
 const executors: Record<string, NodeExecutor> = {
   'remove-bg': executeRemoveBg,
@@ -27,8 +31,6 @@ const executors: Record<string, NodeExecutor> = {
 
 export function usePipelineRunner() {
   const store = usePipelineStore()
-  const gpu = useGpu()
-  const { createFrame } = useImageFrame()
   const runError = ref<string | null>(null)
 
   async function run() {
@@ -67,7 +69,7 @@ export function usePipelineRunner() {
     runError.value = null
 
     // Init GPU (optional)
-    await gpu.init()
+    await initGpu()
 
     // Set up abort
     const abortController = new AbortController()
@@ -85,7 +87,7 @@ export function usePipelineRunner() {
     // Build execution context
     const ctx: ExecutionContext = {
       abortSignal: abortController.signal,
-      gpuDevice: gpu.device.value,
+      gpuDevice: getGpuDevice(),
       onProgress: (nodeId, progress) => {
         store.updateNodeState(nodeId, { progress })
       },
@@ -188,8 +190,6 @@ export function usePipelineRunner() {
             status: 'error',
             error: e.message || 'Unknown error',
           })
-          // Continue to next node — don't halt entire pipeline for one node error
-          // But downstream nodes won't have inputs
         }
       }
     } finally {

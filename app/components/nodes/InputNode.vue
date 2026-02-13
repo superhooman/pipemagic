@@ -2,7 +2,7 @@
 import { PhotoIcon } from "@heroicons/vue/20/solid";
 import BaseNode from "~/components/nodes/BaseNode.vue";
 import { usePipelineStore } from "~/stores/pipeline";
-import { fileToBitmap, resizeBitmap } from "~/utils/image";
+import { fileToBitmap, resizeBitmap } from "pipemagic";
 import type { ImageFrame } from "~~/shared/types/image-frame";
 
 const props = defineProps<{

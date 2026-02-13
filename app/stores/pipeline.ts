@@ -7,7 +7,7 @@ import type { NodeState } from '~~/shared/types/execution'
 import { createDefaultNodeState } from '~~/shared/types/execution'
 import { DEFAULT_PARAMS, type NodeParamsMap } from '~~/shared/types/node-params'
 import type { ImageFrame } from '~~/shared/types/image-frame'
-import { getDownstreamNodes } from '~/utils/graph'
+import { getDownstreamNodes } from 'pipemagic'
 
 const STORAGE_KEY = 'pipemagic:pipeline'
 

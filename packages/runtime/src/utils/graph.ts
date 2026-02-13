@@ -1,4 +1,4 @@
-import type { NodeDef, EdgeDef } from '~~/shared/types/pipeline'
+import type { NodeDef, EdgeDef } from '../types/pipeline'
 
 export interface ValidationError {
   nodeId?: string

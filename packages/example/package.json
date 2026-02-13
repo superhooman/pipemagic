@@ -1,0 +1,16 @@
+{
+  "name": "pipemagic-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "pipemagic": "0.1.0"
+  },
+  "devDependencies": {
+    "vite": "^6.3.0",
+    "typescript": "^5.7.3"
+  }
+}

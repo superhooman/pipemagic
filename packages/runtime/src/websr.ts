@@ -1,5 +1,5 @@
 /**
- * Standalone WebSR utility — loads runtime + weights from jsDelivr CDN.
+ * Standalone WebSR utility -- loads runtime + weights from jsDelivr CDN.
  * Zero app-specific imports. Safe to copy into other projects.
  */
 
@@ -9,7 +9,7 @@ const SCRIPT_URL = `${CDN_BASE}/dist/websr.js`
 type ModelSize = 'cnn-2x-s' | 'cnn-2x-m' | 'cnn-2x-l'
 type ContentType = 'rl' | 'an' | '3d'
 
-// ── Singleton state ──────────────────────────────────────────────────
+// -- Singleton state --
 
 let scriptLoaded = false
 let gpuDevice: GPUDevice | null = null
@@ -17,7 +17,7 @@ let instance: any = null
 let currentKey: string | null = null
 const weightsCache = new Map<string, any>()
 
-// ── CDN script loader ────────────────────────────────────────────────
+// -- CDN script loader --
 
 function loadScript(): Promise<void> {
   if (scriptLoaded && (globalThis as any).WebSR) return Promise.resolve()
@@ -41,7 +41,7 @@ function loadScript(): Promise<void> {
   })
 }
 
-// ── Weight fetcher ───────────────────────────────────────────────────
+// -- Weight fetcher --
 
 async function fetchWeights(model: ModelSize, contentType: ContentType): Promise<any> {
   const key = `${model}-${contentType}`
@@ -56,7 +56,7 @@ async function fetchWeights(model: ModelSize, contentType: ContentType): Promise
   return weights
 }
 
-// ── Public API ───────────────────────────────────────────────────────
+// -- Public API --
 
 interface Upscaler {
   render: (source: ImageBitmap) => Promise<void>

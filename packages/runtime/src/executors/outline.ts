@@ -1,13 +1,12 @@
-import type { ExecutionContext } from '~~/shared/types/execution'
-import type { ImageFrame } from '~~/shared/types/image-frame'
-import { bitmapToImageData, imageDataToBitmap } from '~/utils/image'
-import { useImageFrame } from '~/composables/useImageFrame'
+import type { ExecutionContext } from '../types/execution'
+import type { ImageFrame } from '../types/image-frame'
+import { bitmapToImageData, imageDataToBitmap } from '../utils/image'
+import { bitmapToTexture, textureToBitmap, createFrame } from '../utils/gpu'
 
-// Import WGSL shaders as raw strings via Vite
-import seedSrc from '~~/gpu/jfa-seed.wgsl?raw'
-import stepSrc from '~~/gpu/jfa-step.wgsl?raw'
-import distSrc from '~~/gpu/jfa-distance.wgsl?raw'
-import compositeSrc from '~~/gpu/outline-composite.wgsl?raw'
+import seedSrc from '../shaders/jfa-seed.wgsl'
+import stepSrc from '../shaders/jfa-step.wgsl'
+import distSrc from '../shaders/jfa-distance.wgsl'
+import compositeSrc from '../shaders/outline-composite.wgsl'
 
 export async function executeOutline(
   ctx: ExecutionContext,
@@ -59,7 +58,6 @@ async function executeOutlineGpu(
   opts: OutlineOpts,
 ): Promise<ImageFrame> {
   const device = ctx.gpuDevice!
-  const { bitmapToTexture, textureToBitmap, createFrame } = useImageFrame()
 
   const { width, height } = input
   ctx.onProgress('', 0.1)
@@ -93,7 +91,7 @@ async function executeOutlineGpu(
     usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC,
   })
 
-  // Create pipelines (reused for both JFA passes)
+  // Create pipelines
   const seedModule = device.createShaderModule({ code: seedSrc })
   const seedPipeline = device.createComputePipeline({
     layout: 'auto',
@@ -126,7 +124,7 @@ async function executeOutlineGpu(
   const wgX = Math.ceil(width / 8)
   const wgY = Math.ceil(height / 8)
 
-  // Runs seed → JFA flood → distance for one direction
+  // Runs seed -> JFA flood -> distance for one direction
   function runJfaPass(distTarget: GPUTexture, invert: boolean) {
     // Seed pass
     device.queue.writeBuffer(seedParamsBuf, 0, new Float32Array([0.1, invert ? 1.0 : 0.0, 0, 0]))
@@ -196,12 +194,12 @@ async function executeOutlineGpu(
 
   ctx.onProgress('', 0.2)
 
-  // Outer distance: foreground seeds → distance for outside pixels
+  // Outer distance: foreground seeds -> distance for outside pixels
   runJfaPass(outerDistTex, false)
 
   ctx.onProgress('', 0.5)
 
-  // Inner distance: background seeds → distance for inside pixels
+  // Inner distance: background seeds -> distance for inside pixels
   runJfaPass(innerDistTex, true)
 
   ctx.onProgress('', 0.8)
