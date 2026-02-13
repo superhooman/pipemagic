@@ -1,5 +1,7 @@
 import tailwindcss from '@tailwindcss/vite'
 
+const baseURL = process.env.NUXT_APP_BASE_URL || '/'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   ssr: false,
@@ -18,7 +20,7 @@ export default defineNuxtConfig({
   ],
 
   app: {
-    baseURL: process.env.NUXT_APP_BASE_URL || '/',
+    baseURL,
     head: {
       title: 'PipeMagic',
       meta: [
@@ -26,10 +28,10 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       ],
       link: [
-        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'icon', type: 'image/svg+xml', href: `${baseURL}favicon.svg` },
       ],
       script: [
-        { src: '/coi-serviceworker.min.js' },
+        { src: `${baseURL}coi-serviceworker.min.js` },
       ],
     },
     spaLoadingTemplate: true,
