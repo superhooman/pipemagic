@@ -1,7 +1,7 @@
 {
   "name": "pipemagic",
-  "version": "0.1.0",
-  "description": "Standalone runtime for PipeMagic image processing pipelines",
+  "version": "0.1.1",
+  "description": "Browser-based image processing pipeline runtime — background removal, normalization, outlining, and upscaling with WebGPU",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -19,7 +19,23 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mo1app/pipemagic.git",
+    "directory": "packages/runtime"
+  },
+  "homepage": "https://github.com/mo1app/pipemagic",
+  "keywords": [
+    "image-processing",
+    "pipeline",
+    "webgpu",
+    "background-removal",
+    "upscale",
+    "sticker",
+    "browser"
   ],
   "scripts": {
     "build": "tsup",
