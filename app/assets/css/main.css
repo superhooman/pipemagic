@@ -41,6 +41,7 @@ html, body, #__nuxt {
   background: #1a1a1a !important;
   border: 1px solid #333;
   border-radius: 6px;
+  overflow: hidden;
 }
 
 .vue-flow__controls {
