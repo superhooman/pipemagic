@@ -4,6 +4,8 @@ Visual image processing pipeline editor that runs entirely in the browser. Build
 
 **[Node Editor](https://pipemagic.mo1.app/)** · **[Example App](https://pipemagic.mo1.app/example/)** · **[npm Package](https://www.npmjs.com/package/pipemagic)**
 
+![Preview](.github/preview.jpg)
+
 ## Runtime example
 
 ```ts
