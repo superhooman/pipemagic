@@ -1,6 +1,6 @@
 {
   "name": "pipemagic",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Browser-based image processing pipeline runtime — background removal, depth estimation, face segmentation, outlining, and upscaling with WebGPU",
   "type": "module",
   "main": "./dist/index.cjs",
